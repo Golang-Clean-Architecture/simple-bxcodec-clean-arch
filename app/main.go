@@ -1,14 +1,24 @@
 package main
 
 import (
-	"database/sql"
+	httpTodo "bxcodec-clean-arch/article/delivery/http"
+	"bxcodec-clean-arch/article/usecase"
+	"bxcodec-clean-arch/domain"
+	repository "bxcodec-clean-arch/todo/repository/postgresql"
 	"fmt"
 	"log"
-	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+var (
+	server         *gin.Engine
+	todoService    usecase.TodoServiceImpl
+	todoController httpTodo.TodoController
 )
 
 func init() {
@@ -23,23 +33,36 @@ func init() {
 }
 
 func main() {
-	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", viper.GetString("database.user"), viper.GetString("database.pass"), viper.GetString("database.host"), viper.GetString("database.port"), viper.GetString("database.name"))
-	dbConn, err := sql.Open("postgres", connectionString)
+	// Init DB
+	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", viper.GetString("database.user"), viper.GetString("database.pass"), viper.GetString("database.host"), viper.GetString("database.port"), viper.GetString("database.name"))
+	dbConn, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
 
-	defer func() {
-		err := dbConn.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	// Migrate the schema
+	dbConn.AutoMigrate(&domain.Todo{})
 
-	routerApp := echo.New()
-	routerApp.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	routerApp.Logger.Fatal(routerApp.Start(viper.GetString("server.address")))
+	// Check db connection
+
 	fmt.Println("Server is running on port " + viper.GetString("server.address"))
+
+	// Init Router
+
+	server = gin.Default()
+	basePath := server.Group("/v1")
+
+	// Init Middleware
+
+	// Init Repository
+	todoRepo := repository.NewPostgresqlTodoRepo(dbConn)
+	// Init Usecase
+	todoService = *usecase.NewTodoService(todoRepo)
+	// Init Handler
+	todoController = httpTodo.NewTodoController(todoService)
+
+	// Run Router
+	todoController.RegisterTodoRoutes(basePath)
+	log.Fatal(server.Run(":8080"))
+
 }

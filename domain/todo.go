@@ -1,6 +1,7 @@
 package domain
 
 type Todo struct {
+	ID     uint   `gorm:"primaryKey"`
 	Name   string `json:"name" bson:"name"`
 	Status string `json:"status" bson:"status"`
 }

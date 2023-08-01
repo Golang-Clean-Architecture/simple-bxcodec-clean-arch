@@ -2,80 +2,64 @@ package repository
 
 import (
 	"bxcodec-clean-arch/domain"
-	"context"
 	"errors"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"gorm.io/gorm"
 )
 
-type TodoRepo struct {
-	todoCollection *mongo.Collection
-	ctx            context.Context
+type PostgresqlTodoRepo struct {
+	DB *gorm.DB
 }
 
 // New
 // make a function that act like a constructor
-func New(mongo *mongo.Collection, ctx context.Context) *TodoRepo {
-	return &TodoRepo{mongo, ctx}
+func NewPostgresqlTodoRepo(dB *gorm.DB) domain.TodoRepo {
+	return &PostgresqlTodoRepo{DB: dB}
 }
 
 // receiver function or more like classes/struct method in python/java
-func (u *TodoRepo) CreateTodo(todo *domain.Todo) error {
+func (u *PostgresqlTodoRepo) CreateTodo(todo *domain.Todo) error {
 	if todo.Name == "" {
 		return errors.New("please fill todo name")
 	}
-	_, err := u.todoCollection.InsertOne(u.ctx, todo)
+	err := u.DB.Create(todo).Error
 	return err
 }
 
-func (u *TodoRepo) GetTodo(name *string) (*domain.Todo, error) {
+func (u *PostgresqlTodoRepo) GetTodo(name *string) (*domain.Todo, error) {
 	var todo *domain.Todo
-	query := bson.D{bson.E{Key: "name", Value: name}}
-	err := u.todoCollection.FindOne(u.ctx, query).Decode(&todo)
+	err := u.DB.Where("name = ?", name).First(&todo).Error
 	return todo, err
 }
 
-func (u *TodoRepo) GetAll() ([]*domain.Todo, error) {
+func (u *PostgresqlTodoRepo) GetAll() ([]*domain.Todo, error) {
 	var todos []*domain.Todo
-	cursor, err := u.todoCollection.Find(u.ctx, bson.D{{}})
+	err := u.DB.Find(&todos).Error
 	if err != nil {
 		return nil, err
 	}
-	for cursor.Next(u.ctx) {
-		var todo *domain.Todo
-		err := cursor.Decode(&todo)
-		if err != nil {
-			return nil, err
-		}
-		todos = append(todos, todo)
-	}
-	if err := cursor.Err(); err != nil {
-		return nil, err
-	}
-	cursor.Close(u.ctx)
-
 	if len(todos) == 0 {
 		return nil, errors.New("document is empty")
 	}
 	return todos, nil
 }
 
-func (u *TodoRepo) UpdateTodo(todo *domain.Todo) error {
-	filter := bson.D{bson.E{Key: "name", Value: todo.Name}}
-	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: todo.Name}, bson.E{Key: "status", Value: todo.Status}}}}
-	result, _ := u.todoCollection.UpdateOne(u.ctx, filter, update)
-	if result.MatchedCount != 1 {
+// Update All with same name
+func (u *PostgresqlTodoRepo) UpdateTodo(todo *domain.Todo) error {
+	err := u.DB.Model(&todo).Where("name = ?", todo.Name).Update("status", todo.Status).Error
+
+	if err != nil {
 		return errors.New("no matched document found for update")
 	}
 	return nil
 }
 
-func (u *TodoRepo) DeleteTodo(name *string) error {
-	filter := bson.D{bson.E{Key: "name", Value: name}}
-	result, _ := u.todoCollection.DeleteOne(u.ctx, filter)
-	if result.DeletedCount == 0 {
+func (u *PostgresqlTodoRepo) DeleteTodo(name *string) error {
+	var todo *domain.Todo
+	errFind := u.DB.Where("name = ?", name).First(&todo).Error
+	if errFind != nil {
 		return errors.New("no matched document found for delete")
 	}
+	u.DB.Delete(&domain.Todo{}, todo.ID)
 	return nil
 }
