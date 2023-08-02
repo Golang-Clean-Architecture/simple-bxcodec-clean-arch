@@ -1,10 +1,10 @@
 package main
 
 import (
-	httpTodo "bxcodec-clean-arch/article/delivery/http"
-	"bxcodec-clean-arch/article/usecase"
 	"bxcodec-clean-arch/domain"
+	httpTodo "bxcodec-clean-arch/todo/delivery/http"
 	repository "bxcodec-clean-arch/todo/repository/postgresql"
+	"bxcodec-clean-arch/todo/usecase"
 	"fmt"
 	"log"
 
@@ -16,9 +16,7 @@ import (
 )
 
 var (
-	server         *gin.Engine
-	todoService    usecase.TodoServiceImpl
-	todoController httpTodo.TodoController
+	server *gin.Engine
 )
 
 func init() {
@@ -57,9 +55,9 @@ func main() {
 	// Init Repository
 	todoRepo := repository.NewPostgresqlTodoRepo(dbConn)
 	// Init Usecase
-	todoService = *usecase.NewTodoService(todoRepo)
+	todoService := usecase.NewTodoService(todoRepo)
 	// Init Handler
-	todoController = httpTodo.NewTodoController(todoService)
+	todoController := httpTodo.NewTodoController(todoService)
 
 	// Run Router
 	todoController.RegisterTodoRoutes(basePath)

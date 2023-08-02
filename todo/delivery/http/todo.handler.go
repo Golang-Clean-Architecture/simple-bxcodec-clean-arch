@@ -1,13 +1,13 @@
 package http
 
 import (
-	"bxcodec-clean-arch/article/usecase"
+	"bxcodec-clean-arch/domain"
 
 	"github.com/gin-gonic/gin"
 )
 
 type TodoController struct {
-	TodoUsecase usecase.TodoServiceImpl
+	TodoUsecase domain.TodoUsecase
 }
 
 // grouping the route for anything that has prefix /todo routes

@@ -1,14 +1,13 @@
 package http
 
 import (
-	"bxcodec-clean-arch/article/usecase"
 	"bxcodec-clean-arch/domain"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func NewTodoController(todoService usecase.TodoServiceImpl) TodoController {
+func NewTodoController(todoService domain.TodoUsecase) TodoController {
 	return TodoController{
 		TodoUsecase: todoService,
 	}

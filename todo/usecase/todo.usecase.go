@@ -9,7 +9,7 @@ type TodoServiceImpl struct {
 }
 
 // make a function that act like a constructor
-func NewTodoService(todoRepo domain.TodoRepo) *TodoServiceImpl {
+func NewTodoService(todoRepo domain.TodoRepo) domain.TodoUsecase {
 	return &TodoServiceImpl{
 		repo: todoRepo,
 	}

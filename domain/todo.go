@@ -14,3 +14,11 @@ type TodoRepo interface {
 	UpdateTodo(*Todo) error
 	DeleteTodo(*string) error
 }
+
+type TodoUsecase interface {
+	CreateTodo(*Todo) error
+	GetTodo(*string) (*Todo, error)
+	GetAll() ([]*Todo, error)
+	UpdateTodo(*Todo) error
+	DeleteTodo(*string) error
+}
