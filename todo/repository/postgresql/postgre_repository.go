@@ -29,6 +29,9 @@ func (u *PostgresqlTodoRepo) CreateTodo(todo *domain.Todo) error {
 func (u *PostgresqlTodoRepo) GetTodo(name *string) (*domain.Todo, error) {
 	var todo *domain.Todo
 	err := u.DB.Where("name = ?", name).First(&todo).Error
+	if err != nil {
+		return nil, err
+	}
 	return todo, err
 }
 

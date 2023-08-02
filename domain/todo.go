@@ -6,7 +6,7 @@ type Todo struct {
 	Status string `json:"status" bson:"status"`
 }
 
-// here we create API/Service Contract
+// here we create repository Contract
 type TodoRepo interface {
 	CreateTodo(*Todo) error
 	GetTodo(*string) (*Todo, error)
