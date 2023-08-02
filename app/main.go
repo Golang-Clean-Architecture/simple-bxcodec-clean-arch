@@ -63,6 +63,6 @@ func main() {
 
 	// Run Router
 	todoController.RegisterTodoRoutes(basePath)
-	log.Fatal(server.Run(":8080"))
+	log.Fatal(server.Run(viper.GetString("server.address")))
 
 }
