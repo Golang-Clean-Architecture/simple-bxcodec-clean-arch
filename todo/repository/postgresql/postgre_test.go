@@ -1,6 +1,7 @@
 package repository_test
 
 import (
+	"bxcodec-clean-arch/domain"
 	repository "bxcodec-clean-arch/todo/repository/postgresql"
 	"database/sql"
 	"fmt"
@@ -67,4 +68,35 @@ func TestShouldGetTodoByNameError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, todo)
 
+}
+
+func TestShouldCreateTodo(t *testing.T) {
+	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+
+	dialector := postgres.New(postgres.Config{
+		Conn:       db,
+		DriverName: "postgres",
+	})
+	dbGorm, _ := gorm.Open(dialector, &gorm.Config{})
+	todoRepo := repository.NewPostgresqlTodoRepo(dbGorm)
+	if err != nil {
+		t.Fatal("an error " + err.Error() + " was not expected when opening a stub database connection")
+	}
+	defer db.Close()
+
+	todoName := domain.Todo{
+		ID:     1,
+		Name:   "No Name",
+		Status: "DONE",
+	} // in querying, this string turn into $1 = first arguments -> of the function
+
+	query := `INSERT INTO "todos" ("name","status", "id") VALUES ($1,$2,$3) RETURNING "id"`
+	mock.ExpectBegin()
+	mock.ExpectQuery(query).
+		WithArgs("No Name", "DONE", 1).
+		WillReturnError(nil)
+	mock.ExpectCommit()
+	err = todoRepo.CreateTodo(&todoName)
+
+	assert.Nil(t, err)
 }
