@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package todogrpc;
+
+option go_package = "bxcodec-clean-arch/todogrpc";
+
+service TodoCRUD {
+    rpc CreateTodo (NewTodo) returns (Error) {}
+}
+
+message NewTodo {
+    string Name = 1;
+    string Status = 2;
+}
+
+message Error {
+    string err = 1;
+}
